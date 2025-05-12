@@ -8,9 +8,11 @@ import {
   User
 } from 'firebase/auth';
 import { auth, googleProvider } from '../config/firebase';
+import { createUserProfile, updateUserLastLogin, getUserProfile, UserProfile } from '../services/database';
 
 interface AuthContextType {
   currentUser: User | null;
+  userProfile: UserProfile | null;
   loading: boolean;
   signup: (email: string, password: string) => Promise<any>;
   login: (email: string, password: string) => Promise<any>;
@@ -30,12 +32,16 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const signup = async (email: string, password: string) => {
     try {
-      return await createUserWithEmailAndPassword(auth, email, password);
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      // Create a user profile in Firestore
+      await createUserProfile(result.user.uid, email);
+      return result;
     } catch (err) {
       console.error("Signup error:", err);
       throw err;
@@ -44,7 +50,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     try {
-      return await signInWithEmailAndPassword(auth, email, password);
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      // Update last login timestamp
+      if (result.user) {
+        await updateUserLastLogin(result.user.uid);
+      }
+      return result;
     } catch (err) {
       console.error("Login error:", err);
       throw err;
@@ -53,7 +64,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithGoogle = async () => {
     try {
-      return await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      
+      // Check if this is a new user and create profile if needed
+      const profile = await getUserProfile(result.user.uid);
+      if (!profile) {
+        await createUserProfile(result.user.uid, result.user.email || '');
+      } else {
+        await updateUserLastLogin(result.user.uid);
+      }
+      
+      return result;
     } catch (err) {
       console.error("Google login error:", err);
       throw err;
@@ -71,8 +92,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     try {
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
         setCurrentUser(user);
+        
+        // If user is logged in, get their profile data
+        if (user) {
+          try {
+            const profile = await getUserProfile(user.uid);
+            setUserProfile(profile);
+          } catch (profileError) {
+            console.error("Error fetching user profile:", profileError);
+          }
+        } else {
+          setUserProfile(null);
+        }
+        
         setLoading(false);
       }, (error) => {
         console.error("Auth state change error:", error);
@@ -97,6 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const value = {
     currentUser,
+    userProfile,
     loading,
     signup,
     login,

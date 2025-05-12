@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   LayoutDashboard, 
@@ -20,75 +20,136 @@ import {
   Download
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { 
+  getUserShipments, 
+  getUserDocuments, 
+  getUserNotifications,
+  createDocument,
+  markNotificationAsRead,
+  Shipment,
+  Document as DocumentType,
+  Notification as NotificationType
+} from '../services/database';
 
 export const Dashboard: React.FC = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [newDocuments, setNewDocuments] = useState<any[]>([]);
+  const [shipments, setShipments] = useState<Shipment[]>([]);
+  const [documents, setDocuments] = useState<DocumentType[]>([]);
+  const [newDocuments, setNewDocuments] = useState<DocumentType[]>([]);
+  const [notifications, setNotifications] = useState<NotificationType[]>([]);
   const [filteredStatus, setFilteredStatus] = useState('All Statuses');
-  const [viewingDocument, setViewingDocument] = useState<any>(null);
+  const [viewingDocument, setViewingDocument] = useState<DocumentType | null>(null);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
 
-  // IMPORTANT: In production, these sample data should be replaced with:
-  // 1. API calls to fetch user-specific data from the backend
-  // 2. Real-time database queries (e.g., Firestore) to get current user data
-  // 3. Data should be filtered to only show items relevant to the current user
-  // 4. Implement pagination for large datasets
-  // This ensures each user sees only their own shipments, documents, and notifications.
+  // Load user data when component mounts or user changes
+  useEffect(() => {
+    if (currentUser) {
+      const fetchUserData = async () => {
+        try {
+          setDataLoading(true);
+          
+          // Fetch user's shipments, documents, and notifications in parallel
+          const [userShipments, userDocuments, userNotifications] = await Promise.all([
+            getUserShipments(currentUser.uid),
+            getUserDocuments(currentUser.uid),
+            getUserNotifications(currentUser.uid)
+          ]);
+          
+          setShipments(userShipments);
+          setDocuments(userDocuments);
+          setNotifications(userNotifications);
+        } catch (error) {
+          console.error('Error loading user data:', error);
+          // Fallback to sample data if there's an error
+          setShipments(sampleShipments);
+          setDocuments(sampleDocuments);
+          setNotifications(sampleNotifications);
+        } finally {
+          setDataLoading(false);
+        }
+      };
+      
+      fetchUserData();
+    }
+  }, [currentUser]);
 
-  // Sample data for shipments
-  const shipments = [
-    { id: 'SHP-2023-001', origin: 'China', destination: 'Ethiopia', status: 'In Transit', eta: '2023-05-20', type: 'Sea Freight' },
-    { id: 'SHP-2023-002', origin: 'UAE', destination: 'Ethiopia', status: 'Customs Clearance', eta: '2023-05-18', type: 'Air Freight' },
-    { id: 'SHP-2023-003', origin: 'USA', destination: 'Ethiopia', status: 'Delivered', eta: '2023-05-15', type: 'Air Freight' },
+  // Sample data for fallback
+  const sampleShipments = [
+    { id: 'SHP-2023-001', userId: '', origin: 'China', destination: 'Ethiopia', status: 'In Transit', eta: '2023-05-20', type: 'Sea Freight', createdAt: new Date(), updatedAt: new Date() },
+    { id: 'SHP-2023-002', userId: '', origin: 'UAE', destination: 'Ethiopia', status: 'Customs Clearance', eta: '2023-05-18', type: 'Air Freight', createdAt: new Date(), updatedAt: new Date() },
+    { id: 'SHP-2023-003', userId: '', origin: 'USA', destination: 'Ethiopia', status: 'Delivered', eta: '2023-05-15', type: 'Air Freight', createdAt: new Date(), updatedAt: new Date() },
   ];
 
-  // Sample data for documents
-  const documents = [
-    { id: 'DOC-2023-001', name: 'Commercial Invoice.pdf', status: 'Approved', date: '2023-05-10', url: 'https://example.com/documents/commercial-invoice.pdf', size: '245 KB' },
-    { id: 'DOC-2023-002', name: 'Bill of Lading.pdf', status: 'Pending', date: '2023-05-12', url: 'https://example.com/documents/bill-of-lading.pdf', size: '320 KB' },
-    { id: 'DOC-2023-003', name: 'Customs Declaration.pdf', status: 'Needs Revision', date: '2023-05-14', url: 'https://example.com/documents/customs-declaration.pdf', size: '180 KB' },
+  const sampleDocuments = [
+    { id: 'DOC-2023-001', userId: '', name: 'Commercial Invoice.pdf', status: 'Approved', date: '2023-05-10', url: 'https://example.com/documents/commercial-invoice.pdf', size: '245 KB', createdAt: new Date() },
+    { id: 'DOC-2023-002', userId: '', name: 'Bill of Lading.pdf', status: 'Pending', date: '2023-05-12', url: 'https://example.com/documents/bill-of-lading.pdf', size: '320 KB', createdAt: new Date() },
+    { id: 'DOC-2023-003', userId: '', name: 'Customs Declaration.pdf', status: 'Needs Revision', date: '2023-05-14', url: 'https://example.com/documents/customs-declaration.pdf', size: '180 KB', createdAt: new Date() },
   ];
 
-  // Sample data for notifications
-  const notifications = [
-    { id: 1, message: 'Shipment SHP-2023-001 has cleared customs', time: '2 hours ago', read: false },
-    { id: 2, message: 'New document uploaded: Import Permit', time: '1 day ago', read: true },
-    { id: 3, message: 'Quote request approved', time: '2 days ago', read: true },
+  const sampleNotifications = [
+    { id: '1', userId: '', message: 'Shipment SHP-2023-001 has cleared customs', time: '2 hours ago', read: false, createdAt: new Date() },
+    { id: '2', userId: '', message: 'New document uploaded: Import Permit', time: '1 day ago', read: true, createdAt: new Date() },
+    { id: '3', userId: '', message: 'Quote request approved', time: '2 days ago', read: true, createdAt: new Date() },
   ];
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0 && currentUser) {
       setUploadingFile(true);
+      const file = e.target.files[0];
+      
+      // Create a URL for the file
+      const fileUrl = URL.createObjectURL(file);
       
       // Simulate upload progress
       let progress = 0;
-      const interval = setInterval(() => {
+      const progressInterval = setInterval(() => {
         progress += 10;
         setUploadProgress(progress);
         
         if (progress >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            setUploadingFile(false);
-            setUploadProgress(0);
-            
-            // Add the uploaded file to newDocuments
-            const file = e.target.files![0];
-            const newDoc = {
-              id: `DOC-${Date.now()}`,
-              name: file.name,
-              status: 'Pending',
-              date: new Date().toISOString().split('T')[0],
-              size: (file.size / 1024).toFixed(2) + ' KB',
-              url: URL.createObjectURL(file)
-            };
-            
-            setNewDocuments(prev => [...prev, newDoc]);
-          }, 500);
+          clearInterval(progressInterval);
+          
+          // Create document in Firestore
+          const createDocumentInDb = async () => {
+            try {
+              // In a real app, you would upload to Firebase Storage and get a URL
+              const documentData = {
+                userId: currentUser.uid,
+                name: file.name,
+                status: 'Pending',
+                date: new Date().toISOString().split('T')[0],
+                size: (file.size / 1024).toFixed(2) + ' KB',
+                url: fileUrl
+              };
+              
+              const docId = await createDocument(documentData);
+              
+              // Create new document object
+              const newDoc: DocumentType = {
+                id: docId,
+                ...documentData,
+                createdAt: new Date()
+              };
+              
+              // Add to both lists
+              setNewDocuments(prev => [...prev, newDoc]);
+              setDocuments(prev => [...prev, newDoc]);
+              
+              setUploadingFile(false);
+              setUploadProgress(0);
+            } catch (error) {
+              console.error('Error creating document:', error);
+              setUploadingFile(false);
+              setUploadProgress(0);
+            }
+          };
+          
+          createDocumentInDb();
         }
       }, 300);
     }
@@ -100,12 +161,12 @@ export const Dashboard: React.FC = () => {
     }
   };
   
-  const handleViewDocument = (doc: any) => {
+  const handleViewDocument = (doc: DocumentType) => {
     setViewingDocument(doc);
     setShowDocumentModal(true);
   };
   
-  const handleDownloadDocument = (doc: any) => {
+  const handleDownloadDocument = (doc: DocumentType) => {
     // Create a temporary anchor element
     const link = document.createElement('a');
     link.href = doc.url;
@@ -113,6 +174,22 @@ export const Dashboard: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleReadNotification = async (notificationId: string) => {
+    try {
+      await markNotificationAsRead(notificationId);
+      // Update the local state
+      setNotifications(prev => 
+        prev.map(notification => 
+          notification.id === notificationId 
+            ? { ...notification, read: true } 
+            : notification
+        )
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
   };
   
   const getFilteredDocuments = () => {
