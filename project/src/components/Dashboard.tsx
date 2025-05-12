@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { 
   LayoutDashboard, 
@@ -20,136 +20,75 @@ import {
   Download
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  getUserShipments, 
-  getUserDocuments, 
-  getUserNotifications,
-  createDocument,
-  markNotificationAsRead,
-  Shipment,
-  Document as DocumentType,
-  Notification as NotificationType
-} from '../services/database';
 
 export const Dashboard: React.FC = () => {
-  const { currentUser, userProfile } = useAuth();
+  const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [shipments, setShipments] = useState<Shipment[]>([]);
-  const [documents, setDocuments] = useState<DocumentType[]>([]);
-  const [newDocuments, setNewDocuments] = useState<DocumentType[]>([]);
-  const [notifications, setNotifications] = useState<NotificationType[]>([]);
+  const [newDocuments, setNewDocuments] = useState<any[]>([]);
   const [filteredStatus, setFilteredStatus] = useState('All Statuses');
-  const [viewingDocument, setViewingDocument] = useState<DocumentType | null>(null);
+  const [viewingDocument, setViewingDocument] = useState<any>(null);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
-  const [dataLoading, setDataLoading] = useState(true);
 
-  // Load user data when component mounts or user changes
-  useEffect(() => {
-    if (currentUser) {
-      const fetchUserData = async () => {
-        try {
-          setDataLoading(true);
-          
-          // Fetch user's shipments, documents, and notifications in parallel
-          const [userShipments, userDocuments, userNotifications] = await Promise.all([
-            getUserShipments(currentUser.uid),
-            getUserDocuments(currentUser.uid),
-            getUserNotifications(currentUser.uid)
-          ]);
-          
-          setShipments(userShipments);
-          setDocuments(userDocuments);
-          setNotifications(userNotifications);
-        } catch (error) {
-          console.error('Error loading user data:', error);
-          // Fallback to sample data if there's an error
-          setShipments(sampleShipments);
-          setDocuments(sampleDocuments);
-          setNotifications(sampleNotifications);
-        } finally {
-          setDataLoading(false);
-        }
-      };
-      
-      fetchUserData();
-    }
-  }, [currentUser]);
+  // IMPORTANT: In production, these sample data should be replaced with:
+  // 1. API calls to fetch user-specific data from the backend
+  // 2. Real-time database queries (e.g., Firestore) to get current user data
+  // 3. Data should be filtered to only show items relevant to the current user
+  // 4. Implement pagination for large datasets
+  // This ensures each user sees only their own shipments, documents, and notifications.
 
-  // Sample data for fallback
-  const sampleShipments = [
-    { id: 'SHP-2023-001', userId: '', origin: 'China', destination: 'Ethiopia', status: 'In Transit', eta: '2023-05-20', type: 'Sea Freight', createdAt: new Date(), updatedAt: new Date() },
-    { id: 'SHP-2023-002', userId: '', origin: 'UAE', destination: 'Ethiopia', status: 'Customs Clearance', eta: '2023-05-18', type: 'Air Freight', createdAt: new Date(), updatedAt: new Date() },
-    { id: 'SHP-2023-003', userId: '', origin: 'USA', destination: 'Ethiopia', status: 'Delivered', eta: '2023-05-15', type: 'Air Freight', createdAt: new Date(), updatedAt: new Date() },
+  // Sample data for shipments
+  const shipments = [
+    { id: 'SHP-2023-001', origin: 'China', destination: 'Ethiopia', status: 'In Transit', eta: '2023-05-20', type: 'Sea Freight' },
+    { id: 'SHP-2023-002', origin: 'UAE', destination: 'Ethiopia', status: 'Customs Clearance', eta: '2023-05-18', type: 'Air Freight' },
+    { id: 'SHP-2023-003', origin: 'USA', destination: 'Ethiopia', status: 'Delivered', eta: '2023-05-15', type: 'Air Freight' },
   ];
 
-  const sampleDocuments = [
-    { id: 'DOC-2023-001', userId: '', name: 'Commercial Invoice.pdf', status: 'Approved', date: '2023-05-10', url: 'https://example.com/documents/commercial-invoice.pdf', size: '245 KB', createdAt: new Date() },
-    { id: 'DOC-2023-002', userId: '', name: 'Bill of Lading.pdf', status: 'Pending', date: '2023-05-12', url: 'https://example.com/documents/bill-of-lading.pdf', size: '320 KB', createdAt: new Date() },
-    { id: 'DOC-2023-003', userId: '', name: 'Customs Declaration.pdf', status: 'Needs Revision', date: '2023-05-14', url: 'https://example.com/documents/customs-declaration.pdf', size: '180 KB', createdAt: new Date() },
+  // Sample data for documents
+  const documents = [
+    { id: 'DOC-2023-001', name: 'Commercial Invoice.pdf', status: 'Approved', date: '2023-05-10', url: 'https://example.com/documents/commercial-invoice.pdf', size: '245 KB' },
+    { id: 'DOC-2023-002', name: 'Bill of Lading.pdf', status: 'Pending', date: '2023-05-12', url: 'https://example.com/documents/bill-of-lading.pdf', size: '320 KB' },
+    { id: 'DOC-2023-003', name: 'Customs Declaration.pdf', status: 'Needs Revision', date: '2023-05-14', url: 'https://example.com/documents/customs-declaration.pdf', size: '180 KB' },
   ];
 
-  const sampleNotifications = [
-    { id: '1', userId: '', message: 'Shipment SHP-2023-001 has cleared customs', time: '2 hours ago', read: false, createdAt: new Date() },
-    { id: '2', userId: '', message: 'New document uploaded: Import Permit', time: '1 day ago', read: true, createdAt: new Date() },
-    { id: '3', userId: '', message: 'Quote request approved', time: '2 days ago', read: true, createdAt: new Date() },
+  // Sample data for notifications
+  const notifications = [
+    { id: 1, message: 'Shipment SHP-2023-001 has cleared customs', time: '2 hours ago', read: false },
+    { id: 2, message: 'New document uploaded: Import Permit', time: '1 day ago', read: true },
+    { id: 3, message: 'Quote request approved', time: '2 days ago', read: true },
   ];
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0 && currentUser) {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
       setUploadingFile(true);
-      const file = e.target.files[0];
-      
-      // Create a URL for the file
-      const fileUrl = URL.createObjectURL(file);
       
       // Simulate upload progress
       let progress = 0;
-      const progressInterval = setInterval(() => {
+      const interval = setInterval(() => {
         progress += 10;
         setUploadProgress(progress);
         
         if (progress >= 100) {
-          clearInterval(progressInterval);
-          
-          // Create document in Firestore
-          const createDocumentInDb = async () => {
-            try {
-              // In a real app, you would upload to Firebase Storage and get a URL
-              const documentData = {
-                userId: currentUser.uid,
-                name: file.name,
-                status: 'Pending',
-                date: new Date().toISOString().split('T')[0],
-                size: (file.size / 1024).toFixed(2) + ' KB',
-                url: fileUrl
-              };
-              
-              const docId = await createDocument(documentData);
-              
-              // Create new document object
-              const newDoc: DocumentType = {
-                id: docId,
-                ...documentData,
-                createdAt: new Date()
-              };
-              
-              // Add to both lists
-              setNewDocuments(prev => [...prev, newDoc]);
-              setDocuments(prev => [...prev, newDoc]);
-              
-              setUploadingFile(false);
-              setUploadProgress(0);
-            } catch (error) {
-              console.error('Error creating document:', error);
-              setUploadingFile(false);
-              setUploadProgress(0);
-            }
-          };
-          
-          createDocumentInDb();
+          clearInterval(interval);
+          setTimeout(() => {
+            setUploadingFile(false);
+            setUploadProgress(0);
+            
+            // Add the uploaded file to newDocuments
+            const file = e.target.files![0];
+            const newDoc = {
+              id: `DOC-${Date.now()}`,
+              name: file.name,
+              status: 'Pending',
+              date: new Date().toISOString().split('T')[0],
+              size: (file.size / 1024).toFixed(2) + ' KB',
+              url: URL.createObjectURL(file)
+            };
+            
+            setNewDocuments(prev => [...prev, newDoc]);
+          }, 500);
         }
       }, 300);
     }
@@ -161,12 +100,12 @@ export const Dashboard: React.FC = () => {
     }
   };
   
-  const handleViewDocument = (doc: DocumentType) => {
+  const handleViewDocument = (doc: any) => {
     setViewingDocument(doc);
     setShowDocumentModal(true);
   };
   
-  const handleDownloadDocument = (doc: DocumentType) => {
+  const handleDownloadDocument = (doc: any) => {
     // Create a temporary anchor element
     const link = document.createElement('a');
     link.href = doc.url;
@@ -174,22 +113,6 @@ export const Dashboard: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  const handleReadNotification = async (notificationId: string) => {
-    try {
-      await markNotificationAsRead(notificationId);
-      // Update the local state
-      setNotifications(prev => 
-        prev.map(notification => 
-          notification.id === notificationId 
-            ? { ...notification, read: true } 
-            : notification
-        )
-      );
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
   };
   
   const getFilteredDocuments = () => {
@@ -382,197 +305,222 @@ export const Dashboard: React.FC = () => {
         );
       case 'shipments':
         return (
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-xl font-bold text-charcoal-900 mb-4">Shipment Tracker</h2>
-            <p className="mb-6 text-charcoal-600">Track and manage all your shipments in one place</p>
-            
-            <div className="space-y-6">
-              {/* Search and filter bar */}
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 mb-6">
-                <div className="relative flex-1">
-                  <input 
-                    type="text" 
-                    placeholder="Search shipments..."
-                    className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-1 focus:ring-accent-green focus:border-accent-green"
-                  />
-                  <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
+          <div className="space-y-6">
+            <motion.div 
+              className="bg-white rounded-xl shadow-md p-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-charcoal-900 mb-2">Shipment Tracker</h2>
+                  <p className="text-charcoal-600">Track and manage all your shipments in one place</p>
                 </div>
-                <div className="flex space-x-2">
-                  <select className="py-2 px-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-accent-green focus:border-accent-green text-sm">
-                    <option>All Statuses</option>
-                    <option>In Transit</option>
-                    <option>Customs Clearance</option>
-                    <option>Delivered</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Shipment tables */}
-              <div className="overflow-x-auto">
-                <table className="min-w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="px-3 py-3 text-left text-xs font-medium text-charcoal-500 uppercase tracking-wider">ID</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-charcoal-500 uppercase tracking-wider">Origin</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-charcoal-500 uppercase tracking-wider">Destination</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-charcoal-500 uppercase tracking-wider">Type</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-charcoal-500 uppercase tracking-wider">Status</th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-charcoal-500 uppercase tracking-wider">ETA</th>
-                      <th className="px-3 py-3 text-center text-xs font-medium text-charcoal-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {shipments.map((shipment) => (
-                      <tr key={shipment.id} className="hover:bg-gray-50 border-b border-gray-100">
-                        <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-charcoal-900">{shipment.id}</td>
-                        <td className="px-3 py-4 whitespace-nowrap text-sm text-charcoal-700">{shipment.origin}</td>
-                        <td className="px-3 py-4 whitespace-nowrap text-sm text-charcoal-700">{shipment.destination}</td>
-                        <td className="px-3 py-4 whitespace-nowrap text-sm text-charcoal-700">{shipment.type}</td>
-                        <td className="px-3 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadgeClasses(shipment.status)}`}>
-                            {shipment.status}
-                          </span>
-                        </td>
-                        <td className="px-3 py-4 whitespace-nowrap text-sm text-charcoal-700">{shipment.eta}</td>
-                        <td className="px-3 py-4 whitespace-nowrap text-center">
-                          <div className="flex justify-center space-x-2">
-                            <button 
-                              className="p-1.5 rounded-full text-gray-500 hover:bg-gray-200 hover:text-accent-green transition-colors"
-                              title="View details"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            <button 
-                              className="p-1.5 rounded-full text-gray-500 hover:bg-gray-200 hover:text-blue-600 transition-colors"
-                              title="Track shipment"
-                            >
-                              <Ship className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <button className="flex items-center px-4 py-2 bg-accent-green text-white rounded-lg hover:bg-accent-green/90 transition-colors">
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Shipment
+                </button>
               </div>
               
-              {/* Shipment tracking detail */}
+              <div className="space-y-6">
+                {/* Search and filter bar */}
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 mb-6">
+                  <div className="relative flex-1">
+                    <input 
+                      type="text" 
+                      placeholder="Search shipments..."
+                      className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-1 focus:ring-accent-green focus:border-accent-green"
+                    />
+                    <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <div className="flex space-x-2">
+                    <select className="py-2 px-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-accent-green focus:border-accent-green text-sm">
+                      <option>All Statuses</option>
+                      <option>In Transit</option>
+                      <option>Customs Clearance</option>
+                      <option>Delivered</option>
+                    </select>
+                    <select className="py-2 px-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-accent-green focus:border-accent-green text-sm">
+                      <option>All Types</option>
+                      <option>Sea Freight</option>
+                      <option>Air Freight</option>
+                      <option>Road Freight</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Shipment tables */}
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="px-3 py-3 text-left text-xs font-medium text-charcoal-500 uppercase tracking-wider">ID</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-charcoal-500 uppercase tracking-wider">Origin</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-charcoal-500 uppercase tracking-wider">Destination</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-charcoal-500 uppercase tracking-wider">Type</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-charcoal-500 uppercase tracking-wider">Status</th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-charcoal-500 uppercase tracking-wider">ETA</th>
+                        <th className="px-3 py-3 text-center text-xs font-medium text-charcoal-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {shipments.map((shipment) => (
+                        <tr key={shipment.id} className="hover:bg-gray-50 border-b border-gray-100">
+                          <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-charcoal-900">{shipment.id}</td>
+                          <td className="px-3 py-4 whitespace-nowrap text-sm text-charcoal-700">{shipment.origin}</td>
+                          <td className="px-3 py-4 whitespace-nowrap text-sm text-charcoal-700">{shipment.destination}</td>
+                          <td className="px-3 py-4 whitespace-nowrap text-sm text-charcoal-700">{shipment.type}</td>
+                          <td className="px-3 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadgeClasses(shipment.status)}`}>
+                              {shipment.status}
+                            </span>
+                          </td>
+                          <td className="px-3 py-4 whitespace-nowrap text-sm text-charcoal-700">{shipment.eta}</td>
+                          <td className="px-3 py-4 whitespace-nowrap text-center">
+                            <div className="flex justify-center space-x-2">
+                              <button 
+                                className="p-1.5 rounded-full text-gray-500 hover:bg-gray-200 hover:text-accent-green transition-colors"
+                                title="View details"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button 
+                                className="p-1.5 rounded-full text-gray-500 hover:bg-gray-200 hover:text-blue-600 transition-colors"
+                                title="Track shipment"
+                              >
+                                <Ship className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Shipment tracking detail */}
+            <motion.div 
+              className="bg-white rounded-xl shadow-md p-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <h3 className="text-lg font-medium text-charcoal-900 mb-4">Shipment Details: SHP-2023-001</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 bg-gray-50 p-4 rounded-lg">
+                <div>
+                  <span className="text-xs font-medium text-charcoal-500">Shipment Type</span>
+                  <p className="text-sm font-medium text-charcoal-900">Sea Freight</p>
+                </div>
+                <div>
+                  <span className="text-xs font-medium text-charcoal-500">Carrier</span>
+                  <p className="text-sm font-medium text-charcoal-900">Ethio Express</p>
+                </div>
+                <div>
+                  <span className="text-xs font-medium text-charcoal-500">Current Status</span>
+                  <p className="text-sm font-medium text-accent-green">Customs Clearance</p>
+                </div>
+                <div>
+                  <span className="text-xs font-medium text-charcoal-500">Estimated Delivery</span>
+                  <p className="text-sm font-medium text-charcoal-900">May 20, 2023</p>
+                </div>
+              </div>
+              
+              {/* Timeline */}
+              <div className="relative">
+                <div className="absolute top-0 bottom-0 left-7 w-0.5 bg-gray-200"></div>
+                <ul className="space-y-6">
+                  <li className="relative">
+                    <div className="flex items-start">
+                      <div className="absolute left-0 mt-1.5 w-14 text-xs font-medium text-charcoal-500 text-right pr-4">Today</div>
+                      <div className="flex-shrink-0 ml-14 mr-3 h-4 w-4 rounded-full bg-accent-green border-4 border-white ring-4 ring-accent-green/20 z-10"></div>
+                      <div className="flex-1 pt-0.5">
+                        <div className="bg-accent-green/5 rounded-lg p-3">
+                          <h4 className="text-sm font-medium text-charcoal-900">In Customs Clearance</h4>
+                          <p className="text-xs text-charcoal-600">Your shipment has arrived at Bole International Airport and is undergoing customs clearance procedures.</p>
+                          <p className="text-xs text-charcoal-500 mt-1">May 15, 2023 • 08:45 AM</p>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                  <li className="relative">
+                    <div className="flex items-start">
+                      <div className="absolute left-0 mt-1.5 w-14 text-xs font-medium text-charcoal-500 text-right pr-4">May 12</div>
+                      <div className="flex-shrink-0 ml-14 mr-3 h-4 w-4 rounded-full bg-gray-300 border-4 border-white z-10"></div>
+                      <div className="flex-1 pt-0.5">
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <h4 className="text-sm font-medium text-charcoal-900">In Transit</h4>
+                          <p className="text-xs text-charcoal-600">Your shipment has departed from Shanghai International Airport and is en route to Ethiopia.</p>
+                          <p className="text-xs text-charcoal-500 mt-1">May 12, 2023 • 22:30 PM</p>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                  <li className="relative">
+                    <div className="flex items-start">
+                      <div className="absolute left-0 mt-1.5 w-14 text-xs font-medium text-charcoal-500 text-right pr-4">May 10</div>
+                      <div className="flex-shrink-0 ml-14 mr-3 h-4 w-4 rounded-full bg-gray-300 border-4 border-white z-10"></div>
+                      <div className="flex-1 pt-0.5">
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <h4 className="text-sm font-medium text-charcoal-900">Processing at Origin</h4>
+                          <p className="text-xs text-charcoal-600">Your shipment has been processed and is waiting for departure at Shanghai International Airport.</p>
+                          <p className="text-xs text-charcoal-500 mt-1">May 10, 2023 • 15:20 PM</p>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                  <li className="relative">
+                    <div className="flex items-start">
+                      <div className="absolute left-0 mt-1.5 w-14 text-xs font-medium text-charcoal-500 text-right pr-4">May 08</div>
+                      <div className="flex-shrink-0 ml-14 mr-3 h-4 w-4 rounded-full bg-gray-300 border-4 border-white z-10"></div>
+                      <div className="flex-1 pt-0.5">
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <h4 className="text-sm font-medium text-charcoal-900">Shipment Created</h4>
+                          <p className="text-xs text-charcoal-600">Your shipment has been registered in our system and is waiting for pickup.</p>
+                          <p className="text-xs text-charcoal-500 mt-1">May 08, 2023 • 09:15 AM</p>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+              
+              {/* Related documents */}
               <div className="mt-8 pt-6 border-t border-gray-200">
-                <h3 className="text-lg font-medium text-charcoal-900 mb-4">Shipment Details: SHP-2023-001</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 bg-gray-50 p-4 rounded-lg">
-                  <div>
-                    <span className="text-xs font-medium text-charcoal-500">Shipment Type</span>
-                    <p className="text-sm font-medium text-charcoal-900">Sea Freight</p>
-                  </div>
-                  <div>
-                    <span className="text-xs font-medium text-charcoal-500">Carrier</span>
-                    <p className="text-sm font-medium text-charcoal-900">Ethio Express</p>
-                  </div>
-                  <div>
-                    <span className="text-xs font-medium text-charcoal-500">Current Status</span>
-                    <p className="text-sm font-medium text-accent-green">Customs Clearance</p>
-                  </div>
-                  <div>
-                    <span className="text-xs font-medium text-charcoal-500">Estimated Delivery</span>
-                    <p className="text-sm font-medium text-charcoal-900">May 20, 2023</p>
-                  </div>
-                </div>
-                
-                {/* Timeline */}
-                <div className="relative">
-                  <div className="absolute top-0 bottom-0 left-7 w-0.5 bg-gray-200"></div>
-                  <ul className="space-y-6">
-                    <li className="relative">
-                      <div className="flex items-start">
-                        <div className="absolute left-0 mt-1.5 w-14 text-xs font-medium text-charcoal-500 text-right pr-4">Today</div>
-                        <div className="flex-shrink-0 ml-14 mr-3 h-4 w-4 rounded-full bg-accent-green border-4 border-white ring-4 ring-accent-green/20 z-10"></div>
-                        <div className="flex-1 pt-0.5">
-                          <div className="bg-accent-green/5 rounded-lg p-3">
-                            <h4 className="text-sm font-medium text-charcoal-900">In Customs Clearance</h4>
-                            <p className="text-xs text-charcoal-600">Your shipment has arrived at Bole International Airport and is undergoing customs clearance procedures.</p>
-                            <p className="text-xs text-charcoal-500 mt-1">May 15, 2023 • 08:45 AM</p>
-                          </div>
-                        </div>
-                      </div>
-                    </li>
-                    <li className="relative">
-                      <div className="flex items-start">
-                        <div className="absolute left-0 mt-1.5 w-14 text-xs font-medium text-charcoal-500 text-right pr-4">May 12</div>
-                        <div className="flex-shrink-0 ml-14 mr-3 h-4 w-4 rounded-full bg-gray-300 border-4 border-white z-10"></div>
-                        <div className="flex-1 pt-0.5">
-                          <div className="bg-gray-50 rounded-lg p-3">
-                            <h4 className="text-sm font-medium text-charcoal-900">In Transit</h4>
-                            <p className="text-xs text-charcoal-600">Your shipment has departed from Shanghai International Airport and is en route to Ethiopia.</p>
-                            <p className="text-xs text-charcoal-500 mt-1">May 12, 2023 • 22:30 PM</p>
-                          </div>
-                        </div>
-                      </div>
-                    </li>
-                    <li className="relative">
-                      <div className="flex items-start">
-                        <div className="absolute left-0 mt-1.5 w-14 text-xs font-medium text-charcoal-500 text-right pr-4">May 10</div>
-                        <div className="flex-shrink-0 ml-14 mr-3 h-4 w-4 rounded-full bg-gray-300 border-4 border-white z-10"></div>
-                        <div className="flex-1 pt-0.5">
-                          <div className="bg-gray-50 rounded-lg p-3">
-                            <h4 className="text-sm font-medium text-charcoal-900">Processing at Origin</h4>
-                            <p className="text-xs text-charcoal-600">Your shipment has been processed and is waiting for departure at Shanghai International Airport.</p>
-                            <p className="text-xs text-charcoal-500 mt-1">May 10, 2023 • 15:20 PM</p>
-                          </div>
-                        </div>
-                      </div>
-                    </li>
-                    <li className="relative">
-                      <div className="flex items-start">
-                        <div className="absolute left-0 mt-1.5 w-14 text-xs font-medium text-charcoal-500 text-right pr-4">May 08</div>
-                        <div className="flex-shrink-0 ml-14 mr-3 h-4 w-4 rounded-full bg-gray-300 border-4 border-white z-10"></div>
-                        <div className="flex-1 pt-0.5">
-                          <div className="bg-gray-50 rounded-lg p-3">
-                            <h4 className="text-sm font-medium text-charcoal-900">Shipment Created</h4>
-                            <p className="text-xs text-charcoal-600">Your shipment has been registered in our system and is waiting for pickup.</p>
-                            <p className="text-xs text-charcoal-500 mt-1">May 08, 2023 • 09:15 AM</p>
-                          </div>
-                        </div>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-                
-                {/* Related documents */}
-                <div className="mt-8 pt-6 border-t border-gray-200">
-                  <h3 className="text-lg font-medium text-charcoal-900 mb-4">Related Documents</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                      <div className="p-2 bg-gray-100 rounded mr-3">
-                        <FileText className="h-5 w-5 text-charcoal-700" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-charcoal-900">Bill of Lading.pdf</p>
-                        <p className="text-xs text-charcoal-500">Added on May 12, 2023</p>
-                      </div>
-                      <button className="p-1.5 rounded-full text-gray-500 hover:bg-gray-200 hover:text-blue-600 transition-colors">
-                        <Download className="w-4 h-4" />
-                      </button>
+                <h3 className="text-lg font-medium text-charcoal-900 mb-4">Related Documents</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="p-2 bg-gray-100 rounded mr-3">
+                      <FileText className="h-5 w-5 text-charcoal-700" />
                     </div>
-                    
-                    <div className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                      <div className="p-2 bg-gray-100 rounded mr-3">
-                        <FileText className="h-5 w-5 text-charcoal-700" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-charcoal-900">Commercial Invoice.pdf</p>
-                        <p className="text-xs text-charcoal-500">Added on May 10, 2023</p>
-                      </div>
-                      <button className="p-1.5 rounded-full text-gray-500 hover:bg-gray-200 hover:text-blue-600 transition-colors">
-                        <Download className="w-4 h-4" />
-                      </button>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-charcoal-900">Bill of Lading.pdf</p>
+                      <p className="text-xs text-charcoal-500">Added on May 12, 2023</p>
                     </div>
+                    <button className="p-1.5 rounded-full text-gray-500 hover:bg-gray-200 hover:text-blue-600 transition-colors">
+                      <Download className="w-4 h-4" />
+                    </button>
+                  </div>
+                  
+                  <div className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="p-2 bg-gray-100 rounded mr-3">
+                      <FileText className="h-5 w-5 text-charcoal-700" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-charcoal-900">Commercial Invoice.pdf</p>
+                      <p className="text-xs text-charcoal-500">Added on May 10, 2023</p>
+                    </div>
+                    <button className="p-1.5 rounded-full text-gray-500 hover:bg-gray-200 hover:text-blue-600 transition-colors">
+                      <Download className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         );
       case 'documents':
