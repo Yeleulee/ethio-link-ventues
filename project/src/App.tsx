@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Hero } from './components/Hero';
@@ -10,9 +10,12 @@ import { SignIn } from './components/auth/SignIn';
 import { SignUp } from './components/auth/SignUp';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './contexts/AuthContext';
-import { Dashboard } from './components/Dashboard';
+import { SimpleDashboard } from './components/SimpleDashboard';
 import { About } from './components/About';
 import { Contact } from './components/Contact';
+
+// Lazy load the Dashboard component to improve initial load performance
+const Dashboard = lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
 
 // Error boundary for auth-related issues
 const AuthErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -59,16 +62,51 @@ const AuthErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }
   return <>{children}</>;
 };
 
-// Protected Route component with fallback for auth errors
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  try {
-  const { currentUser } = useAuth();
-  
-  if (!currentUser) {
-    return <Navigate to="/login" />;
+// Dashboard error boundary component
+const DashboardErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    const handleErrors = (event: ErrorEvent) => {
+      if (event.error && event.error.message && 
+         (event.error.message.includes('dashboard') || 
+          event.error.message.includes('render'))) {
+        console.error('Dashboard error caught:', event.error);
+        setHasError(true);
+        event.preventDefault();
+      }
+    };
+
+    window.addEventListener('error', handleErrors);
+    return () => window.removeEventListener('error', handleErrors);
+  }, []);
+
+  if (hasError) {
+    return <SimpleDashboard />;
   }
 
   return <>{children}</>;
+};
+
+// Protected Route component with fallback for auth errors
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  try {
+    const { currentUser, loading } = useAuth();
+    
+    // Show loading state while auth is initializing
+    if (loading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent-green"></div>
+        </div>
+      );
+    }
+    
+    if (!currentUser) {
+      return <Navigate to="/login" />;
+    }
+
+    return <>{children}</>;
   } catch (error) {
     console.error("Error in ProtectedRoute:", error);
     return <Navigate to="/" />;
@@ -101,7 +139,15 @@ function App() {
             {/* Protected routes */}
             <Route path="/dashboard" element={
               <ProtectedRoute>
-                <Dashboard />
+                <DashboardErrorBoundary>
+                  <Suspense fallback={
+                    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent-green"></div>
+                    </div>
+                  }>
+                    <Dashboard />
+                  </Suspense>
+                </DashboardErrorBoundary>
               </ProtectedRoute>
             } />
             <Route path="/profile" element={

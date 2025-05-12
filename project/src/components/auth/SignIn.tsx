@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { motion } from 'framer-motion';
@@ -10,8 +10,16 @@ export const SignIn: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { login, loginWithGoogle } = useAuth();
+  const [loginSuccess, setLoginSuccess] = useState(false);
+  const { login, loginWithGoogle, currentUser } = useAuth();
   const navigate = useNavigate();
+
+  // If user is already logged in, redirect to dashboard
+  useEffect(() => {
+    if (currentUser) {
+      navigate('/dashboard');
+    }
+  }, [currentUser, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,11 +32,33 @@ export const SignIn: React.FC = () => {
     try {
       setError('');
       setLoading(true);
-      await login(email, password);
-      navigate('/dashboard');
+      
+      const result = await login(email, password);
+      
+      if (result && result.user) {
+        // Set success flag and wait briefly before navigating
+        setLoginSuccess(true);
+        
+        // Allow time for auth state to update
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1000);
+      } else {
+        throw new Error('Login failed: No user returned');
+      }
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in');
-      console.error(err);
+      console.error('Login error:', err);
+      
+      // Provide more user-friendly error messages
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        setError('Invalid email or password');
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('Too many failed login attempts. Please try again later or reset your password');
+      } else if (err.code === 'auth/network-request-failed') {
+        setError('Network error. Please check your internet connection and try again');
+      } else {
+        setError(err.message || 'Failed to sign in. Please try again');
+      }
     } finally {
       setLoading(false);
     }
@@ -38,11 +68,32 @@ export const SignIn: React.FC = () => {
     try {
       setError('');
       setGoogleLoading(true);
-      await loginWithGoogle();
-      navigate('/dashboard');
+      
+      const result = await loginWithGoogle();
+      
+      if (result && result.user) {
+        // Set success flag and wait briefly before navigating
+        setLoginSuccess(true);
+        
+        // Allow time for auth state to update
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1000);
+      } else {
+        throw new Error('Google login failed: No user returned');
+      }
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in with Google');
-      console.error(err);
+      console.error('Google login error:', err);
+      
+      if (err.code === 'auth/popup-closed-by-user') {
+        setError('Sign-in was cancelled');
+      } else if (err.code === 'auth/popup-blocked') {
+        setError('Sign-in popup was blocked by your browser. Please enable popups for this site');
+      } else if (err.code === 'auth/network-request-failed') {
+        setError('Network error. Please check your internet connection and try again');
+      } else {
+        setError(err.message || 'Failed to sign in with Google');
+      }
     } finally {
       setGoogleLoading(false);
     }
@@ -63,6 +114,35 @@ export const SignIn: React.FC = () => {
     },
     tap: { scale: 0.98 }
   };
+
+  if (loginSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-sand-50 p-4">
+        <motion.div 
+          className="max-w-md w-full bg-white rounded-xl shadow-xl overflow-hidden p-8 text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.2 }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </motion.div>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Login Successful!</h2>
+          <p className="text-gray-600 mb-4">Redirecting to dashboard...</p>
+          <div className="animate-pulse flex justify-center">
+            <div className="h-2 w-16 bg-accent-green rounded"></div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-sand-50 p-4">
@@ -88,7 +168,7 @@ export const SignIn: React.FC = () => {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
             >
-              Sign in to your Ethio Links Ventures account
+              Sign in to your SIDU Provider account
             </motion.p>
           </div>
 
@@ -194,7 +274,7 @@ export const SignIn: React.FC = () => {
             >
               {googleLoading ? (
                 <div className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-charcoal-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-charcoal-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
@@ -203,10 +283,23 @@ export const SignIn: React.FC = () => {
               ) : (
                 <>
                   <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                    <path fill="#EA4335" d="M5.26620003,9.76452941 C6.19878754,6.93863203 8.85444915,4.90909091 12,4.90909091 C13.6909091,4.90909091 15.2181818,5.50909091 16.4181818,6.49090909 L19.9090909,3 C17.7818182,1.14545455 15.0545455,0 12,0 C7.27006974,0 3.1977497,2.69829785 1.23999023,6.65002441 L5.26620003,9.76452941 Z" />
-                    <path fill="#34A853" d="M16.0407269,18.0125889 C14.9509167,18.7163016 13.5660892,19.0909091 12,19.0909091 C8.86648613,19.0909091 6.21911939,17.076871 5.27698177,14.2678769 L1.23746264,17.3349879 C3.19279051,21.2936293 7.26500293,24 12,24 C14.9328362,24 17.7353462,22.9573905 19.834192,20.9995801 L16.0407269,18.0125889 Z" />
-                    <path fill="#4A90E2" d="M19.834192,20.9995801 C22.0291676,18.9520994 23.4545455,15.903663 23.4545455,12 C23.4545455,11.2909091 23.3454545,10.5818182 23.1272727,9.90909091 L12,9.90909091 L12,14.4545455 L18.4363636,14.4545455 C18.1187732,16.013626 17.2662994,17.2212117 16.0407269,18.0125889 L19.834192,20.9995801 Z" />
-                    <path fill="#FBBC05" d="M5.27698177,14.2678769 C5.03832634,13.556323 4.90909091,12.7937589 4.90909091,12 C4.90909091,11.2182781 5.03443647,10.4668121 5.26620003,9.76452941 L1.23999023,6.65002441 C0.43658717,8.26043162 0,10.0753848 0,12 C0,13.9195484 0.444780743,15.7301709 1.23746264,17.3349879 L5.27698177,14.2678769 Z" />
+                    <path
+                      fill="#4285F4"
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    />
+                    <path fill="none" d="M1 1h22v22H1z" />
                   </svg>
                   Sign in with Google
                 </>
@@ -214,12 +307,14 @@ export const SignIn: React.FC = () => {
             </motion.button>
           </form>
 
-          <p className="mt-8 text-center text-sm text-charcoal-600">
-            Don't have an account?{' '}
-            <Link to="/signup" className="font-medium text-accent-green hover:text-accent-green/90">
-              Sign up
-            </Link>
-          </p>
+          <div className="text-center mt-8">
+            <p className="text-sm text-charcoal-600">
+              Don't have an account?{' '}
+              <Link to="/signup" className="text-accent-green hover:text-accent-green/90 font-medium">
+                Sign up
+              </Link>
+            </p>
+          </div>
         </div>
       </motion.div>
     </div>

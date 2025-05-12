@@ -27,6 +27,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { Logo } from './Logo';
 
 export const Dashboard: React.FC = () => {
   const { currentUser } = useAuth();
@@ -171,23 +172,50 @@ export const Dashboard: React.FC = () => {
           <div className="space-y-8">
             {/* Welcome banner */}
             <motion.div 
-              className="bg-gradient-to-r from-navy-800 to-indigo-900 rounded-xl p-6 text-white shadow-lg"
+              className="bg-gradient-to-r from-accent-green to-accent-green/80 rounded-2xl p-8 text-white shadow-xl overflow-hidden relative"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <div className="flex flex-col md:flex-row md:items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold mb-2">Welcome to SIDU™ Provider Dashboard</h2>
-                  <p className="text-gray-200 max-w-2xl">
-                    Your trusted bridge for logistics, employment matching, and business services. 
-                    Monitor your operations, track shipments, and manage documents all in one place.
-                  </p>
+              {/* Abstract background shapes */}
+              <div className="absolute -right-20 -top-20 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
+              <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
+              
+              <div className="flex flex-col md:flex-row md:items-center justify-between relative z-10">
+                <div className="flex items-start space-x-4">
+                  <div className="hidden md:block">
+                    <Logo width={60} height={60} className="mt-1" />
+                  </div>
+                  <div>
+                    <div className="flex items-center mb-2">
+                      <Logo width={40} height={40} className="mr-3 md:hidden" />
+                      <h2 className="text-2xl md:text-3xl font-bold">Welcome to SIDU™ Provider Dashboard</h2>
+                    </div>
+                    <p className="text-green-50 max-w-2xl">
+                      Your trusted bridge for logistics, employment matching, and business services. 
+                      Monitor your operations, track shipments, and manage documents all in one place.
+                    </p>
+                    <div className="flex flex-wrap gap-3 mt-4">
+                      <div className="bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm">
+                        <span className="font-medium">Trusted Service</span>
+                      </div>
+                      <div className="bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm">
+                        <span className="font-medium">Fast Response</span>
+                      </div>
+                      <div className="bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm">
+                        <span className="font-medium">Professional Support</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="mt-4 md:mt-0">
-                  <button className="bg-white text-navy-800 font-medium px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors">
+                <div className="mt-6 md:mt-0 flex">
+                  <motion.button 
+                    className="bg-white text-accent-green font-medium px-5 py-2.5 rounded-full hover:bg-green-50 transition-colors shadow-md"
+                    whileHover={{ y: -3 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
                     Quick Guide
-                  </button>
+                  </motion.button>
                 </div>
               </div>
             </motion.div>
@@ -195,13 +223,14 @@ export const Dashboard: React.FC = () => {
             {/* Key stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <motion.div 
-                className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-b-4 border-blue-600"
+                className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-blue-600 overflow-hidden relative group"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
                 whileHover={{ y: -5 }}
               >
-                <div className="flex items-center justify-between">
+                <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-blue-100 rounded-full opacity-0 group-hover:opacity-80 transition-opacity duration-300"></div>
+                <div className="flex items-center justify-between relative z-10">
                   <div>
                     <p className="text-sm text-gray-500 mb-1">Active Shipments</p>
                     <h3 className="text-2xl font-bold text-gray-900">{shipments.filter(s => s.status !== 'Delivered').length}</h3>
@@ -210,7 +239,7 @@ export const Dashboard: React.FC = () => {
                     <Ship className="h-6 w-6 text-blue-600" />
                   </div>
                 </div>
-                <div className="mt-4">
+                <div className="mt-4 relative z-10">
                   <div className="flex items-center text-sm">
                     <TrendingUp className="h-4 w-4 text-blue-600 mr-1" />
                     <span className="text-blue-600 font-medium">12% more</span>
@@ -1195,10 +1224,8 @@ export const Dashboard: React.FC = () => {
                 <div className="col-span-1">
                   <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
                     <div className="flex flex-col items-center">
-                      <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center mb-4">
-                        <span className="text-2xl font-bold text-white">
-                          {currentUser?.email?.charAt(0).toUpperCase() || 'S'}
-                        </span>
+                      <div className="w-16 h-16 mx-auto bg-white rounded-full flex items-center justify-center mb-2">
+                        <Logo width={32} height={32} />
                       </div>
                       <h3 className="font-medium text-gray-900 mb-1">
                         {currentUser?.email?.split('@')[0] || 'SIDU User'}
@@ -1534,9 +1561,7 @@ export const Dashboard: React.FC = () => {
             >
               <div className="p-4 bg-navy-800 text-white text-center">
                 <div className="w-16 h-16 mx-auto bg-white rounded-full flex items-center justify-center mb-2">
-                  <span className="text-2xl font-bold text-navy-800">
-                    {currentUser?.email?.charAt(0).toUpperCase() || 'S'}
-                  </span>
+                  <Logo width={32} height={32} />
                 </div>
                 <h3 className="font-medium">{currentUser?.email?.split('@')[0] || 'SIDU User'}</h3>
                 <p className="text-xs text-gray-300 mt-1">Business Account</p>

@@ -4,6 +4,9 @@ import { getAnalytics } from 'firebase/analytics';
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// NOTE: These Firebase credentials still use the old "ethio-link-ventures" project name.
+// TODO: To properly rebrand, a new Firebase project should be created under "SIDU Provider" name
+// and these credentials should be replaced with the new project's credentials.
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCuzJUCQtKKhevPVouuOTSaoCwr_fcKqFM",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "ethio-link-ventures.firebaseapp.com",
@@ -19,6 +22,7 @@ let auth;
 let googleProvider;
 let analytics = null;
 
+// Add graceful error handling for Firebase initialization
 try {
   // Initialize Firebase with error handling
   app = initializeApp(firebaseConfig);
@@ -68,10 +72,13 @@ try {
         return () => {}; 
       },
       signInWithEmailAndPassword: async () => { 
-        throw new Error('Auth service unavailable'); 
+        throw new Error('Auth service unavailable. Please try again later or contact SIDU Provider support.'); 
       },
       createUserWithEmailAndPassword: async () => { 
-        throw new Error('Auth service unavailable'); 
+        throw new Error('Auth service unavailable. Please try again later or contact SIDU Provider support.'); 
+      },
+      signInWithPopup: async () => {
+        throw new Error('Google authentication unavailable. Please try again later or contact SIDU Provider support.');
       },
       signOut: async () => { 
         return Promise.resolve(); 
