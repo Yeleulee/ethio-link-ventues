@@ -11,6 +11,8 @@ import { SignUp } from './components/auth/SignUp';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './contexts/AuthContext';
 import { Dashboard } from './components/Dashboard';
+import { About } from './components/About';
+import { Contact } from './components/Contact';
 
 // Error boundary for auth-related issues
 const AuthErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -60,13 +62,13 @@ const AuthErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }
 // Protected Route component with fallback for auth errors
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   try {
-    const { currentUser } = useAuth();
-    
-    if (!currentUser) {
-      return <Navigate to="/login" />;
-    }
+  const { currentUser } = useAuth();
+  
+  if (!currentUser) {
+    return <Navigate to="/login" />;
+  }
 
-    return <>{children}</>;
+  return <>{children}</>;
   } catch (error) {
     console.error("Error in ProtectedRoute:", error);
     return <Navigate to="/" />;
@@ -77,9 +79,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 const HomePage: React.FC = () => (
   <Layout>
     <Hero />
+    <About />
     <Services />
     <Stats />
     <Testimonials />
+    <Contact />
     <CallToAction />
   </Layout>
 );
@@ -88,7 +92,7 @@ function App() {
   return (
     <Router>
       <AuthErrorBoundary>
-        <AuthProvider>
+      <AuthProvider>
           <Routes>
             <Route path="/login" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
@@ -114,7 +118,7 @@ function App() {
             {/* Fallback route */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
-        </AuthProvider>
+      </AuthProvider>
       </AuthErrorBoundary>
     </Router>
   );
