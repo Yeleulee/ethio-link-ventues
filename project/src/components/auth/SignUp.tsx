@@ -36,7 +36,7 @@ export const SignUp: React.FC = () => {
       setError('');
       setLoading(true);
       await signup(email, password);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Failed to create an account');
       console.error(err);
@@ -50,7 +50,7 @@ export const SignUp: React.FC = () => {
       setError('');
       setGoogleLoading(true);
       await loginWithGoogle();
-      navigate('/');
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Failed to sign up with Google');
       console.error(err);

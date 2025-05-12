@@ -25,7 +25,7 @@ export const SignIn: React.FC = () => {
       setError('');
       setLoading(true);
       await login(email, password);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Failed to sign in');
       console.error(err);
@@ -39,7 +39,7 @@ export const SignIn: React.FC = () => {
       setError('');
       setGoogleLoading(true);
       await loginWithGoogle();
-      navigate('/');
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Failed to sign in with Google');
       console.error(err);

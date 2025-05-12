@@ -10,6 +10,7 @@ import { SignIn } from './components/auth/SignIn';
 import { SignUp } from './components/auth/SignUp';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './contexts/AuthContext';
+import { Dashboard } from './components/Dashboard';
 
 // Error boundary for auth-related issues
 const AuthErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -96,12 +97,7 @@ function App() {
             {/* Protected routes */}
             <Route path="/dashboard" element={
               <ProtectedRoute>
-                <Layout>
-                  <div className="container mx-auto px-4 py-20">
-                    <h1 className="text-3xl font-bold text-center mt-10">User Dashboard</h1>
-                    <p className="text-center mt-4">Welcome to your account dashboard!</p>
-                  </div>
-                </Layout>
+                <Dashboard />
               </ProtectedRoute>
             } />
             <Route path="/profile" element={
