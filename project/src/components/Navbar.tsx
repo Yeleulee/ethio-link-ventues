@@ -185,85 +185,7 @@ export const Navbar: React.FC = () => {
                   />
                 </motion.button>
               ))}
-              
-              {currentUser && (
-                <motion.button
-                  className="relative px-3 py-2 text-charcoal-700 capitalize font-medium"
-                  onClick={() => navigate('/dashboard')}
-                  variants={menuItemVariants}
-                  initial="visible"
-                  whileHover="hover"
-                >
-                  <span>Dashboard</span>
-                  <motion.div
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-green"
-                    initial={{ scaleX: 0, originX: 0 }}
-                    whileHover={{ scaleX: 1 }}
-                    transition={{ duration: 0.3, type: "spring", stiffness: 300 }}
-                  />
-                </motion.button>
-              )}
             </div>
-            
-            {currentUser ? (
-              <div className="flex items-center space-x-3">
-                <motion.div
-                  variants={buttonVariants}
-                  whileHover="hover"
-                  whileTap="tap"
-                  className="shadow-sm"
-                >
-                  <Link 
-                    to="/profile" 
-                    className="px-4 py-2 rounded-full border border-accent-green text-accent-green font-medium flex items-center hover:bg-accent-green/10 transition-colors"
-                  >
-                    <User className="h-4 w-4 mr-2" />
-                    Profile
-                  </Link>
-                </motion.div>
-                <motion.button
-                  className="px-5 py-2 rounded-full bg-accent-green text-white font-medium shadow-md hover:shadow-lg transition-all flex items-center"
-                  variants={buttonVariants}
-                  whileHover="hover"
-                  whileTap="tap"
-                  onClick={handleLogout}
-                >
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Sign Out
-                </motion.button>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-3">
-                <motion.div
-                  variants={buttonVariants}
-                  whileHover="hover"
-                  whileTap="tap"
-                  className="shadow-sm"
-                >
-                  <Link 
-                    to="/login" 
-                    className="px-5 py-2 rounded-full border border-accent-green text-accent-green font-medium flex items-center hover:bg-accent-green/10 transition-colors"
-                  >
-                    <LogIn className="h-4 w-4 mr-2" />
-                    Sign In
-                  </Link>
-                </motion.div>
-                <motion.div
-                  variants={buttonVariants}
-                  whileHover="hover"
-                  whileTap="tap"
-                  className="shadow-sm"
-                >
-                  <Link 
-                    to="/signup"
-                    className="px-5 py-2 rounded-full bg-accent-green text-white font-medium flex items-center shadow-md hover:shadow-lg transition-all"
-                  >
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Sign Up
-                  </Link>
-                </motion.div>
-              </div>
-            )}
           </nav>
 
           {/* Mobile menu button */}
@@ -321,27 +243,6 @@ export const Navbar: React.FC = () => {
                 </motion.div>
               </motion.button>
             ))}
-            
-            {currentUser && (
-              <motion.button
-                className="text-left py-2 px-4 text-charcoal-700 flex items-center"
-                onClick={() => navigate('/dashboard')}
-                variants={mobileMenuItemVariants}
-                initial="visible"
-                whileHover="hover"
-                whileTap={{ scale: 0.98 }}
-              >
-                <motion.span>Dashboard</motion.span>
-                <motion.div
-                  variants={{
-                    hover: { opacity: 1, x: 4 },
-                    visible: { opacity: 0, x: 0 }
-                  }}
-                >
-                  <ChevronRight className="h-4 w-4 ml-2" />
-                </motion.div>
-              </motion.button>
-            )}
             
             {currentUser ? (
               <div className="flex flex-col space-y-3 border-t border-gray-200 pt-4 mt-2">
